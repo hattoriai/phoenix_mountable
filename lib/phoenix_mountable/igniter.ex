@@ -28,18 +28,35 @@ if Code.ensure_loaded?(Igniter) do
     nothing when the host is up to date.
     """
 
+    alias PhoenixMountable.Igniter.HostAssets
     alias PhoenixMountable.Migrations.Generator
 
     @doc """
-    Mounts the library in the host's router, inside the scope piped through
-    `:browser`.
+    Mounts the library in the host's router: adds the mount call, with the
+    import of the module that defines its macro, to the scope with the given
+    path and pipelines (a new one when the router has none).
+
+    It looks for the mount macro in the router, so running it again, or
+    after the host moved the mount elsewhere, changes nothing. It adds the
+    library to the `import_deps` of the host's `.formatter.exs`, so that the
+    mount call keeps no parentheses when the library exports its macro:
+
+        # the library's .formatter.exs
+        [export: [locals_without_parens: [my_lib: 1, my_lib: 2]], ...]
 
     ## Options
 
       * `:router` — the router (asked, or the only one)
-      * `:options` — mount options, as a string of Elixir code
-        (`"resolver: MyApp.MyLibResolver"`)
+      * `:scope` — the path of the scope. Defaults to `"/"`. An admin goes
+        in the host's admin scope: `scope: "/admin"`.
       * `:pipelines` — the pipelines of the scope. Defaults to `[:browser]`.
+      * `:options` — mount options, as a string of Elixir code
+        (`"resolver: MyApp.MyLibResolver"`). `{web}` in it is the host's web
+        module (`"resolver: {web}.MyLibResolver"` gives
+        `resolver: MyAppWeb.MyLibResolver`).
+      * `:import` — the module to import for the macro. Defaults to the
+        definition; a library with several definitions whose macros one
+        module re-exports names that module.
     """
     @spec mount(Igniter.t(), module, String.t(), keyword) :: Igniter.t()
     def mount(igniter, definition, path, opts \\ []) do
@@ -49,40 +66,161 @@ if Code.ensure_loaded?(Igniter) do
           :error -> Igniter.Libs.Phoenix.select_router(igniter)
         end
 
-      if router == nil do
-        Igniter.add_warning(igniter, """
-        No Phoenix router found. Mount #{inspect(definition)} in your router:
+      macro = definition.__phoenix_mountable__(:macro)
+      import = Keyword.get(opts, :import, definition)
+      options = opts[:options] && web_module(igniter, opts[:options])
+      call = "#{macro} #{inspect(path)}#{if options, do: ", " <> options, else: ""}"
 
-            import #{inspect(definition)}
-            #{definition.__phoenix_mountable__(:macro)} #{inspect(path)}
-        """)
-      else
-        macro = definition.__phoenix_mountable__(:macro)
+      cond do
+        router == nil ->
+          Igniter.add_warning(igniter, """
+          No Phoenix router found. Mount #{inspect(definition)} in your router:
 
-        call =
-          "#{macro} #{inspect(path)}#{if opts[:options], do: ", " <> opts[:options], else: ""}"
+              import #{inspect(import)}
+              #{call}
+          """)
 
-        if mounted?(igniter, router, definition) do
+        mounted?(igniter, router, macro) ->
           igniter
-        else
-          Igniter.Libs.Phoenix.append_to_scope(
-            igniter,
-            "/",
-            "import #{inspect(definition)}\n#{call}",
+
+        true ->
+          igniter
+          # The host formats the mount call without parentheses, as the
+          # library's .formatter.exs exports its macro.
+          |> Igniter.Project.Formatter.import_dep(definition.__phoenix_mountable__(:otp_app))
+          |> Igniter.Libs.Phoenix.append_to_scope(
+            Keyword.get(opts, :scope, "/"),
+            "import #{inspect(import)}\n#{call}",
             router: router,
             with_pipelines: Keyword.get(opts, :pipelines, [:browser])
           )
-        end
       end
     end
 
-    defp mounted?(igniter, router, definition) do
+    # The mount macro called anywhere in the router.
+    defp mounted?(igniter, router, macro) do
       case Igniter.Project.Module.find_module(igniter, router) do
         {:ok, {_igniter, source, _zipper}} ->
-          String.contains?(Rewrite.Source.get(source, :content), "import #{inspect(definition)}")
+          Regex.match?(
+            ~r/^\s*#{Regex.escape(Atom.to_string(macro))}[\s(]/m,
+            Rewrite.Source.get(source, :content)
+          )
 
         _ ->
           false
+      end
+    end
+
+    defp web_module(igniter, code) do
+      String.replace(code, "{web}", inspect(Igniter.Libs.Phoenix.web_module(igniter)))
+    end
+
+    @doc """
+    Adds a LiveView hook of the library to the host's `assets/js/app.js`:
+    `import { Hook } from "package"`, and `Hook` in the hooks of its
+    `new LiveSocket(...)`. For a library whose components render in the
+    host's own pages.
+
+    When the hooks cannot be edited safely, it changes nothing and warns
+    with the lines to add (see `PhoenixMountable.Igniter.HostAssets`). It
+    tells the host when its esbuild config does not resolve packages from
+    `deps/`.
+
+    ## Options
+
+      * `:path` — the file. Defaults to `"assets/js/app.js"`.
+    """
+    @spec add_hook(Igniter.t(), String.t(), String.t(), keyword) :: Igniter.t()
+    def add_hook(igniter, hook, package, opts \\ []) do
+      path = Keyword.get(opts, :path, "assets/js/app.js")
+
+      if Igniter.exists?(igniter, path) do
+        igniter
+        |> Igniter.update_file(path, fn source ->
+          case HostAssets.app_js(Rewrite.Source.get(source, :content), hook, package) do
+            {:changed, new} -> Rewrite.Source.update(source, :content, new)
+            :unchanged -> source
+            {:manual, text} -> {:warning, text}
+          end
+        end)
+        |> node_path_notice(package)
+      else
+        Igniter.add_warning(
+          igniter,
+          "#{path} not found. " <> HostAssets.app_js_manual(hook, package)
+        )
+      end
+    end
+
+    defp node_path_notice(igniter, package) do
+      config =
+        case File.read("config/config.exs") do
+          {:ok, source} -> source
+          {:error, _} -> ""
+        end
+
+      if HostAssets.node_path?(config) do
+        igniter
+      else
+        Igniter.add_notice(igniter, """
+        `import ... from "#{package}"` resolves through the NODE_PATH of your esbuild
+        profile, which must have deps/. Add it in config/config.exs:
+
+            env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
+        """)
+      end
+    end
+
+    @doc """
+    Imports style sheets of the library in the host's `assets/css/app.css`,
+    after its other `@import` lines: `files` are paths in the package (or
+    names in its `priv/static`), each a string or `{path, :comment}` for an
+    import left as a comment (a theme the host turns on).
+
+        add_css_imports(igniter, :my_lib, ["my_lib.css", {"my_lib-dark.css", :comment}])
+
+    The paths go through `deps/`, or the directory of a path dependency.
+
+    ## Options
+
+      * `:path` — the file. Defaults to `"assets/css/app.css"`.
+    """
+    @spec add_css_imports(
+            Igniter.t(),
+            atom,
+            [String.t() | {String.t(), :import | :comment}],
+            keyword
+          ) ::
+            Igniter.t()
+    def add_css_imports(igniter, otp_app, files, opts \\ []) do
+      path = Keyword.get(opts, :path, "assets/css/app.css")
+      dir = HostAssets.relative(package_dir(otp_app), Path.dirname(path))
+
+      imports =
+        for file <- files do
+          {file, kind} = if is_tuple(file), do: file, else: {file, :import}
+          file = if String.contains?(file, "/"), do: file, else: "priv/static/" <> file
+          {"#{dir}/#{file}", kind}
+        end
+
+      if Igniter.exists?(igniter, path) do
+        Igniter.update_file(igniter, path, fn source ->
+          case HostAssets.app_css(Rewrite.Source.get(source, :content), imports) do
+            {:changed, new} -> Rewrite.Source.update(source, :content, new)
+            :unchanged -> source
+          end
+        end)
+      else
+        Igniter.add_warning(igniter, "#{path} not found. " <> HostAssets.app_css_manual(imports))
+      end
+    end
+
+    # Where the package is: in the deps directory, or the directory of a path
+    # dependency, which Mix does not copy into deps/.
+    defp package_dir(otp_app) do
+      case Mix.Project.deps_paths()[otp_app] do
+        nil -> Path.join(Mix.Project.deps_path(), Atom.to_string(otp_app))
+        dir -> dir
       end
     end
 
