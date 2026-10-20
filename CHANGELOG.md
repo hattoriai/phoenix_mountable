@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+* `use PhoenixMountable.Install` compiles in an app without Igniter, as
+  a plain Mix task. It chose the task with an `if` in the code it
+  generated, and Elixir expands both branches, so `use Igniter.Mix.Task`
+  failed to expand without Igniter: a library with an installer did not
+  compile at all in such an app.
+
 ## v0.2.2
 
 * A library's callbacks are found while its modules are not loaded yet,

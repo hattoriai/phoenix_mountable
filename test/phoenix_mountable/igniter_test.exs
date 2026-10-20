@@ -180,6 +180,27 @@ defmodule PhoenixMountable.IgniterTest do
       assert_creates(igniter, "lib/test_web/sample_resolver.ex")
     end
 
+    test "without Igniter, a plain Mix task that never names Igniter" do
+      task = PhoenixMountable.Install.__task__(false)
+      refute Macro.to_string(task) =~ "Igniter"
+
+      [{module, _}] =
+        Code.compile_quoted(
+          quote do
+            defmodule Mix.Tasks.SampleLib.PlainInstall do
+              @phoenix_mountable_install PhoenixMountable.Install.__config__(
+                                           otp_app: :sample_lib,
+                                           mounts: []
+                                         )
+              unquote(task)
+            end
+          end
+        )
+
+      assert Mix.Task.task?(module)
+      refute function_exported?(module, :igniter, 1)
+    end
+
     test "has a short doc, and refuses unknown options" do
       assert Mix.Task.shortdoc(Mix.Tasks.SampleLib.Install) ==
                "Installs SampleLib in a Phoenix app"
