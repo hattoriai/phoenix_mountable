@@ -152,6 +152,12 @@ use PhoenixMountable.Path, mountable: MyLib.Router
 | Processes | per mount, lazy or at boot, singletons | | |
 | Migrations | versioned, tracked per prefix on three databases, with backfills and checks | Oban: by hand, Postgres comments | copied into the app |
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md): when a change needs an issue
+first, what a pull request needs, and how to run the checks. Report a
+security problem privately, as [SECURITY.md](SECURITY.md) says.
+
 ## License
 
 MIT. See [LICENSE](https://github.com/hattoriai/phoenix_mountable/blob/main/LICENSE).
