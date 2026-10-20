@@ -111,7 +111,11 @@ defmodule PhoenixMountable.MixProject do
           PhoenixMountable.Telemetry
         ],
         Migrations: ~r/PhoenixMountable\.(Migration|Backfill)/,
-        Installers: [PhoenixMountable.Igniter],
+        Installers: [
+          PhoenixMountable.Install,
+          PhoenixMountable.Igniter,
+          PhoenixMountable.Igniter.HostAssets
+        ],
         Testing: [PhoenixMountable.TestHost, PhoenixMountable.Test]
       ]
     ]
