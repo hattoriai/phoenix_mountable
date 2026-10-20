@@ -1,6 +1,6 @@
 {
   "name": "phoenix_mountable",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Browser helper for libraries built with PhoenixMountable",
   "license": "MIT",
   "module": "./priv/static/phoenix_mountable.esm.js",

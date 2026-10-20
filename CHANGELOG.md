@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.2.2
 
 * A library's callbacks are found while its modules are not loaded yet,
   as in development and tests, where a module loads when first called:
