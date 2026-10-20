@@ -1,0 +1,1 @@
+window.staticLib=1;

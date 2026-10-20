@@ -1,0 +1,8 @@
+{
+  "src/main.tsx": {
+    "file": "assets/main-B1a2c3d4.js",
+    "src": "src/main.tsx",
+    "isEntry": true,
+    "css": ["assets/main-C9f8e7d6.css"]
+  }
+}
