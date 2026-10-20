@@ -165,7 +165,7 @@ defmodule TinyLib.Migrations.V1 do
 
   def up(ctx) do
     create_if_not_exists table(:tiny_notes, prefix: ctx.prefix) do
-      add :body, :text
+      add :body, :string
     end
   end
 

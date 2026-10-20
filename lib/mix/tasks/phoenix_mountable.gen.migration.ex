@@ -90,7 +90,7 @@ if Code.ensure_loaded?(Ecto.Migrator) do
           notes =
             Generator.notes(migrations, Generator.infos(migrations, adapter, from, to), adapter)
 
-          Enum.each(notes, &Mix.shell().info/1)
+          Enum.each(notes, fn note -> Mix.shell().info(note) end)
         end
       end
     end

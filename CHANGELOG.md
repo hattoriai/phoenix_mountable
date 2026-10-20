@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+* Fix a compile warning on Elixir 1.19 in `mix phoenix_mountable.gen.migration`.
+
 ## v0.1.0
 
 The first release.
