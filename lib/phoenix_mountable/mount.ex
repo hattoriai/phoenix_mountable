@@ -128,8 +128,9 @@ defmodule PhoenixMountable.Mount do
   """
   @spec sibling(t | map, atom) :: t | nil
   def sibling(%__MODULE__{router: router}, name) when is_atom(name) do
-    if function_exported?(router, :__phoenix_mountable_mounts__, 0),
-      do: Enum.find(router.__phoenix_mountable_mounts__(), &(&1.name == name))
+    if Code.ensure_loaded?(router) and
+         function_exported?(router, :__phoenix_mountable_mounts__, 0),
+       do: Enum.find(router.__phoenix_mountable_mounts__(), &(&1.name == name))
   end
 
   def sibling(source, name) when is_atom(name) do

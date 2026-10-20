@@ -17,7 +17,7 @@ if Code.ensure_loaded?(Phoenix.LiveView) do
 
       definition = mount.definition
 
-      if function_exported?(definition, :session, 3) do
+      if Code.ensure_loaded?(definition) and function_exported?(definition, :session, 3) do
         mount = %{
           mount
           | endpoint: conn.private[:phoenix_endpoint],

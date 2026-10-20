@@ -38,7 +38,7 @@ defmodule PhoenixMountable.SchemaCheck do
   end
 
   defp repo(definition, mount) do
-    if function_exported?(definition, :repo, 1) do
+    if Code.ensure_loaded?(definition) and function_exported?(definition, :repo, 1) do
       definition.repo(mount)
     else
       Mount.option(mount, :repo)
