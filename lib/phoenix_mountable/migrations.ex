@@ -363,7 +363,9 @@ if Code.ensure_loaded?(Ecto.Migration) do
 
       with_lock_timeout(config, ctx, fn ->
         for {module, version} <- steps do
-          if function_exported?(module, :down, 1), do: module.down(%{ctx | version: version})
+          if Code.ensure_loaded?(module) and function_exported?(module, :down, 1),
+            do: module.down(%{ctx | version: version})
+
           record!(ctx, version - 1)
         end
       end)

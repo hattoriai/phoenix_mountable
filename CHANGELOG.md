@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+* A library's callbacks are found while its modules are not loaded yet,
+  as in development and tests, where a module loads when first called:
+  the definition's `session/3` (until then, the first library page after
+  boot had no session, and an admin could get a 404), `repo/1` of the
+  schema check, an assets strategy's `inject/2`, a migration's `down/1`,
+  a host router's mounts and an installer's `install/1`.
+
 ## v0.2.1
 
 * `PhoenixMountable.Path.path/3` and `PhoenixMountable.Mount.sibling/2`:

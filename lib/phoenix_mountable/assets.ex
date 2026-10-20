@@ -95,7 +95,7 @@ if Code.ensure_loaded?(Phoenix.Router) do
       state = strategy.init(opts, %{module: module, otp_app: otp_app})
 
       inject =
-        if function_exported?(strategy, :inject, 2) do
+        if Code.ensure_loaded?(strategy) and function_exported?(strategy, :inject, 2) do
           strategy.inject(state, module)
         end
 

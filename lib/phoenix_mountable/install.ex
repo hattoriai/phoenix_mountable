@@ -159,7 +159,9 @@ defmodule PhoenixMountable.Install do
         PhoenixMountable.Igniter.add_supervisor(igniter)
       end)
       |> then(fn igniter ->
-        if function_exported?(module, :install, 1), do: module.install(igniter), else: igniter
+        if Code.ensure_loaded?(module) and function_exported?(module, :install, 1),
+          do: module.install(igniter),
+          else: igniter
       end)
     end
 
