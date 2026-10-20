@@ -154,9 +154,9 @@ use PhoenixMountable.Path, mountable: MyLib.Router
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/hattoriai/phoenix_mountable/blob/main/CONTRIBUTING.md): when a change needs an issue
+See [CONTRIBUTING.md](CONTRIBUTING.md): when a change needs an issue
 first, what a pull request needs, and how to run the checks. Report a
-security problem privately, as [SECURITY.md](https://github.com/hattoriai/phoenix_mountable/blob/main/SECURITY.md) says.
+security problem privately, as [SECURITY.md](SECURITY.md) says.
 
 ## License
 
