@@ -48,6 +48,21 @@ defmodule PhoenixMountable.SchemaCheckTest do
     assert build_conn() |> get("/schema") |> text_response(200) == "ok"
   end
 
+  test "a pending upgrade that raises is checked again once migrated", %{repo: repo} do
+    # config/test.exs raises on a pending upgrade, as a host's tests do.
+    Test.up(repo, CompatLib.Migrations, version: 1)
+
+    error =
+      assert_raise PhoenixMountable.Migrations.OutdatedError, fn ->
+        get(build_conn(), "/compat")
+      end
+
+    assert error.message =~ "version 2 is available"
+
+    Test.up(repo, CompatLib.Migrations, version: 2)
+    assert build_conn() |> get("/compat") |> text_response(200) == "ok"
+  end
+
   describe "mix phoenix_mountable.check" do
     test "fails while a library is outdated and passes once migrated", %{repo: repo} do
       args = ["-r", inspect(repo), "--only", "TinyLib.Migrations"]
