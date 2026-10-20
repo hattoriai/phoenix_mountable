@@ -42,8 +42,9 @@ tables. It gives your library:
   host, install options, adoption of installs made before, safe rolling
   deploys, concurrent index builds, batched backfills, and a check that
   tells the host the command to run;
-* an Igniter installer, Mix tasks, and a test kit: a host app for the
-  library's tests, and checks of its migrations against a real database.
+* an installer in one `use` (`PhoenixMountable.Install`, on Igniter),
+  Mix tasks, and a test kit: a host app for the library's tests, and
+  checks of its migrations against a real database.
 
 LiveView is optional: a library of controllers, a JSON API or a single
 page app mounts the same way. The migrations and processes work without
@@ -55,7 +56,7 @@ Phoenix at all, so a library split in two packages, like `lotus` and
 ```elixir
 def deps do
   [
-    {:phoenix_mountable, "~> 0.1"}
+    {:phoenix_mountable, "~> 0.2"}
   ]
 end
 ```

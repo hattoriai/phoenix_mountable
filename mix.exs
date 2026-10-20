@@ -1,7 +1,7 @@
 defmodule PhoenixMountable.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @source_url "https://github.com/hattoriai/phoenix_mountable"
 
   def project do
@@ -111,7 +111,11 @@ defmodule PhoenixMountable.MixProject do
           PhoenixMountable.Telemetry
         ],
         Migrations: ~r/PhoenixMountable\.(Migration|Backfill)/,
-        Installers: [PhoenixMountable.Igniter],
+        Installers: [
+          PhoenixMountable.Install,
+          PhoenixMountable.Igniter,
+          PhoenixMountable.Igniter.HostAssets
+        ],
         Testing: [PhoenixMountable.TestHost, PhoenixMountable.Test]
       ]
     ]

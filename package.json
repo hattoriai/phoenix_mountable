@@ -1,15 +1,21 @@
 {
   "name": "phoenix_mountable",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Browser helper for libraries built with PhoenixMountable",
   "license": "MIT",
   "module": "./priv/static/phoenix_mountable.esm.js",
   "main": "./priv/static/phoenix_mountable.js",
+  "types": "./priv/static/phoenix_mountable.d.ts",
   "exports": {
     ".": {
+      "types": "./priv/static/phoenix_mountable.d.ts",
       "import": "./priv/static/phoenix_mountable.esm.js",
       "require": "./priv/static/phoenix_mountable.js"
     }
   },
-  "files": ["priv/static/phoenix_mountable.js", "priv/static/phoenix_mountable.esm.js"]
+  "files": [
+    "priv/static/phoenix_mountable.js",
+    "priv/static/phoenix_mountable.esm.js",
+    "priv/static/phoenix_mountable.d.ts"
+  ]
 }

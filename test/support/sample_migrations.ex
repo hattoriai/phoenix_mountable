@@ -188,6 +188,32 @@ defmodule TinyLib.Migrations do
     lock_timeout: false
 end
 
+defmodule CompatLib.Migrations do
+  @moduledoc false
+  # TinyLib's versions, under another name, whose code runs on version 1.
+  use PhoenixMountable.Migrations,
+    otp_app: :phoenix_mountable,
+    library: :compat_lib,
+    versions: [TinyLib.Migrations.V1, TinyLib.Migrations.V2],
+    compatible_with: 1,
+    lock_timeout: false
+end
+
+defmodule CompatLib.Router do
+  @moduledoc false
+  use PhoenixMountable,
+    otp_app: :phoenix_mountable,
+    macro: :compat_lib,
+    schema: CompatLib.Migrations
+
+  routes do
+    get "/", SchemaLib.PageController, :index
+  end
+
+  @impl PhoenixMountable
+  def repo(_mount), do: PhoenixMountable.TestRepo.SQLite
+end
+
 defmodule SchemaLib.Router do
   @moduledoc false
   # A library whose mounts check the host's schema on first use.
@@ -212,5 +238,6 @@ end
 
 defmodule SchemaLib.TestHost do
   @moduledoc false
-  use PhoenixMountable.TestHost, mounts: [{SchemaLib.Router, "/schema"}]
+  use PhoenixMountable.TestHost,
+    mounts: [{SchemaLib.Router, "/schema"}, {CompatLib.Router, "/compat"}]
 end

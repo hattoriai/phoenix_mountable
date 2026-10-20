@@ -1,8 +1,24 @@
 # Changelog
 
-## Unreleased
+## v0.2.0
 
-* Fix a compile warning on Elixir 1.19 in `mix phoenix_mountable.gen.migration`.
+* `use PhoenixMountable.Install` declares a library's installer in one
+  `use`: mounts, the migration, a LiveView hook, style sheets, Tailwind
+  sources and the supervisor, then the library's own `install/1`. It is
+  an Igniter task (`mix igniter.install my_lib`) and, in a host without
+  Igniter, says how to get it.
+* `PhoenixMountable.Igniter.mount/4` mounts in any scope, with its
+  pipelines, options (`{web}` is the host's web module) and a re-exported
+  macro (`:import`), and imports the library's formatter, so the host
+  writes the mount without parentheses.
+* `PhoenixMountable.Igniter.add_hook/4` and `add_css_imports/4` edit the
+  host's `app.js` and `app.css` (`PhoenixMountable.Igniter.HostAssets`),
+  or give the lines to add where they cannot.
+* TypeScript types for the browser helper.
+* A pending upgrade under `pending_migrations: :raise` is checked again
+  on each use, so running the migration takes effect without a restart.
+* The migration generator compiles without warnings on Elixir 1.19 and
+  1.20.
 
 ## v0.1.0
 
