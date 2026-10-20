@@ -90,7 +90,9 @@ defmodule PhoenixMountable.MixProject do
         "guides/processes.md",
         "guides/installers.md",
         "guides/testing.md",
-        "CHANGELOG.md"
+        "CHANGELOG.md",
+        "CONTRIBUTING.md",
+        "SECURITY.md"
       ],
       groups_for_extras: [Guides: ~r/guides\//],
       groups_for_modules: [

@@ -1,0 +1,109 @@
+name: Bug report
+description: Something in PhoenixMountable does not work as the docs say.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. A security problem goes to a private report instead (see SECURITY.md).
+
+  - type: input
+    id: phoenix_mountable
+    attributes:
+      label: PhoenixMountable version
+      description: From `mix.lock`, or `mix deps | grep phoenix_mountable`.
+      placeholder: "0.2.2"
+    validations:
+      required: true
+
+  - type: input
+    id: stack
+    attributes:
+      label: Elixir, OTP, Phoenix and LiveView versions
+      description: Of the host app. Say if it has no Phoenix or no LiveView.
+      placeholder: "Elixir 1.19.1, OTP 28, Phoenix 1.8.1, LiveView 1.1.14"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Definitions, mount macros and routes
+        - Options and their checks
+        - The mount (@mount, conn.assigns.mount) and ~m paths
+        - Assets (Embedded, Static, Host) or the browser helper
+        - Processes, PubSub, singletons or telemetry
+        - Migrations, backfills or the schema check
+        - The installer (PhoenixMountable.Install, Igniter)
+        - The test kit (TestHost, PhoenixMountable.Test)
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: database
+    attributes:
+      label: Database and adapter
+      description: For migrations, backfills and the schema check.
+      placeholder: "PostgreSQL 16, postgrex 0.21"
+
+  - type: input
+    id: igniter
+    attributes:
+      label: Igniter version
+      description: For the installer.
+      placeholder: "0.6.30"
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      description: For assets, deploy reloads or the browser helper.
+      placeholder: "Safari 26, macOS 26"
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: The smallest library that shows it
+      description: The definition module (`use PhoenixMountable`), the host router's mount line and the module that fails, or a link to a small repository.
+      render: elixir
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps
+      placeholder: |
+        1. Mount the library with `my_lib "/my_lib"`
+        2. Run `mix phx.server` and open /my_lib/items/1
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: The error and its stacktrace, from the compiler, the server log, the migration or the browser console.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I use a release from Hex, not `main`.
+          required: true
+        - label: I searched the open and closed issues.
+          required: true
