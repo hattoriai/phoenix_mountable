@@ -110,33 +110,48 @@ defmodule PhoenixMountable.Install do
       "Installs #{Macro.camelize(Atom.to_string(config.otp_app))} in a Phoenix app"
   end
 
-  defmacro __using__(opts) do
-    quote bind_quoted: [opts: opts] do
-      @phoenix_mountable_install PhoenixMountable.Install.__config__(opts)
-      @shortdoc PhoenixMountable.Install.__shortdoc__(@phoenix_mountable_install)
-      @behaviour PhoenixMountable.Install
+  defmacro __using__(opts), do: __using__(opts, Code.ensure_loaded?(Igniter))
 
-      if Code.ensure_loaded?(Igniter) do
-        use Igniter.Mix.Task
+  @doc false
+  # The task as Igniter's, or as a plain Mix task in a host without it.
+  # Chosen here, when the macro expands, and not by an `if` in the quote:
+  # the compiler expands the macros of both branches of an `if`, so `use
+  # Igniter.Mix.Task` failed to compile where Igniter is not a dependency.
+  def __using__(opts, igniter?) do
+    config =
+      quote bind_quoted: [opts: opts] do
+        @phoenix_mountable_install PhoenixMountable.Install.__config__(opts)
+        @shortdoc PhoenixMountable.Install.__shortdoc__(@phoenix_mountable_install)
+        @behaviour PhoenixMountable.Install
+      end
 
-        @impl Igniter.Mix.Task
-        def info(_argv, _composing_task) do
-          %Igniter.Mix.Task.Info{group: @phoenix_mountable_install.otp_app}
-        end
+    task =
+      if igniter? do
+        quote do
+          use Igniter.Mix.Task
 
-        @impl Igniter.Mix.Task
-        def igniter(igniter) do
-          PhoenixMountable.Install.run(igniter, __MODULE__, @phoenix_mountable_install)
+          @impl Igniter.Mix.Task
+          def info(_argv, _composing_task) do
+            %Igniter.Mix.Task.Info{group: @phoenix_mountable_install.otp_app}
+          end
+
+          @impl Igniter.Mix.Task
+          def igniter(igniter) do
+            PhoenixMountable.Install.run(igniter, __MODULE__, @phoenix_mountable_install)
+          end
         end
       else
-        use Mix.Task
+        quote do
+          use Mix.Task
 
-        @impl Mix.Task
-        def run(_argv) do
-          PhoenixMountable.Install.without_igniter(@phoenix_mountable_install)
+          @impl Mix.Task
+          def run(_argv) do
+            PhoenixMountable.Install.without_igniter(@phoenix_mountable_install)
+          end
         end
       end
-    end
+
+    [config, task]
   end
 
   if Code.ensure_loaded?(Igniter) do

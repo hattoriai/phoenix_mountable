@@ -180,6 +180,31 @@ defmodule PhoenixMountable.IgniterTest do
       assert_creates(igniter, "lib/test_web/sample_resolver.ex")
     end
 
+    test "without Igniter, is a Mix task that says how to install, and names no Igniter module" do
+      opts = [otp_app: :sample_lib, manual: "Mount it."]
+      ast = PhoenixMountable.Install.__using__(opts, false)
+
+      # The compiler expands every macro of the module, so a host without
+      # Igniter compiles only if the task never names it.
+      refute Macro.to_string(ast) =~ "Igniter"
+
+      Code.compile_quoted(
+        quote do
+          defmodule Mix.Tasks.NoIgniter.Install do
+            unquote(ast)
+          end
+        end
+      )
+
+      Mix.shell(Mix.Shell.Process)
+      on_exit(fn -> Mix.shell(Mix.Shell.IO) end)
+
+      Mix.Tasks.NoIgniter.Install.run([])
+      assert_received {:mix_shell, :info, [text]}
+      assert text =~ "mix igniter.install sample_lib"
+      assert text =~ "Mount it."
+    end
+
     test "has a short doc, and refuses unknown options" do
       assert Mix.Task.shortdoc(Mix.Tasks.SampleLib.Install) ==
                "Installs SampleLib in a Phoenix app"

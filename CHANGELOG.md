@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+* `use PhoenixMountable.Install` compiles in a host without Igniter. The
+  task chose between Igniter's and a plain Mix task with an `if` in its
+  quote, and the compiler expands the macros of both branches, so `use
+  Igniter.Mix.Task` failed: every library with an installer failed to
+  compile where Igniter was not a dependency. The choice is now made when
+  the macro expands.
+
 ## v0.2.2
 
 * A library's callbacks are found while its modules are not loaded yet,
