@@ -159,6 +159,31 @@ if Code.ensure_loaded?(Phoenix.Router) do
       path(source, mount, path, nil)
     end
 
+    @doc """
+    Builds the full path of `path` under another mount of the same router,
+    by its name (the mount macro, or its `:as`): a link from one of the
+    library's definitions to another, wherever the host mounted it.
+
+        PhoenixMountable.Path.path(conn, :my_lib_page, "/")  #=> "/changelog"
+
+    Raises when the host has not mounted it; `PhoenixMountable.Mount.sibling/2`
+    returns `nil` instead, for a link shown only when it has.
+    """
+    @spec path(Mount.t() | map, atom, String.t()) :: String.t()
+    def path(source, name, path) when is_atom(name) do
+      {source, mount} = source(source)
+
+      case Mount.sibling(mount, name) do
+        %Mount{} = sibling ->
+          path(source, sibling, path, nil)
+
+        nil ->
+          raise ArgumentError,
+                "no mount named #{inspect(name)} in #{inspect(mount.router)}: " <>
+                  "mount it, or check with PhoenixMountable.Mount.sibling/2 first"
+      end
+    end
+
     defp path(source, mount, path, query) do
       relative = join(mount.path, path)
 

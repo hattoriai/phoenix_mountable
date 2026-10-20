@@ -114,6 +114,32 @@ defmodule PhoenixMountable.Mount do
   end
 
   @doc """
+  Another mount of the same router, by its name (the mount macro, or its
+  `:as`), from a mount, a conn, a socket or an assigns map. Returns `nil`
+  when the host has not mounted it.
+
+  A library with several definitions links from one to another with it:
+  its admin to its public page, say, wherever the host put the page.
+
+      PhoenixMountable.Mount.sibling(conn, :my_lib_page)
+      #=> %PhoenixMountable.Mount{name: :my_lib_page, path: "/changelog", ...}
+
+  See `PhoenixMountable.Path.path/3` for its paths.
+  """
+  @spec sibling(t | map, atom) :: t | nil
+  def sibling(%__MODULE__{router: router}, name) when is_atom(name) do
+    if function_exported?(router, :__phoenix_mountable_mounts__, 0),
+      do: Enum.find(router.__phoenix_mountable_mounts__(), &(&1.name == name))
+  end
+
+  def sibling(source, name) when is_atom(name) do
+    case fetch(source) do
+      {:ok, mount} -> sibling(mount, name)
+      :error -> if mount = current(), do: sibling(mount, name)
+    end
+  end
+
+  @doc """
   A key that identifies the mount on this node: `{router, name}`.
   """
   @spec key(t) :: {module, atom}

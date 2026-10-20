@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.1
+
+* `PhoenixMountable.Path.path/3` and `PhoenixMountable.Mount.sibling/2`:
+  paths under another mount of the same router, by its name, for a
+  library whose definitions link to each other (an admin to its public
+  page).
+
 ## v0.2.0
 
 * `use PhoenixMountable.Install` declares a library's installer in one
