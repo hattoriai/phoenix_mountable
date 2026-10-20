@@ -165,6 +165,24 @@ push_navigate(socket, to: ~m"/items/#{item}")
 ~H|<.link navigate={~m"/items?#{[page: 2]}"}>Next</.link>|
 ```
 
+The mount comes from the request, so the same code gives the right paths
+when the host mounts the library twice (`:as`).
+
+A library with several definitions (an admin and a public page, say)
+links from one to another by the other mount's name, wherever the host
+put it:
+
+```elixir
+PhoenixMountable.Path.path(conn, :my_lib_page, "/")
+#=> "/changelog"
+
+# nil when the host has not mounted the page: show the link only then
+if PhoenixMountable.Mount.sibling(socket, :my_lib_page), do: ...
+```
+
+The name is the mount macro, or the host's `:as`; a library that lets the
+host rename a sibling takes the name as an option.
+
 ## Without LiveView
 
 A library without live routes needs only Phoenix. Its controllers

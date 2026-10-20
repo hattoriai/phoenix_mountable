@@ -121,4 +121,40 @@ defmodule PhoenixMountable.MountTest do
       assert GenServer.whereis(sample) != GenServer.whereis(other)
     end
   end
+
+  describe "sibling mounts" do
+    test "Mount.sibling/2 finds another mount of the router by name, or nil" do
+      sample = Router.__phoenix_mountable_mount__(:sample_lib)
+
+      assert %PhoenixMountable.Mount{path: "/admin/nested"} =
+               PhoenixMountable.Mount.sibling(sample, :nested_sample)
+
+      assert PhoenixMountable.Mount.sibling(sample, :nope) == nil
+
+      conn = Plug.Conn.put_private(build_conn(), :phoenix_mountable, sample)
+      assert PhoenixMountable.Mount.sibling(conn, :plain_lib).path == "/plain"
+      assert PhoenixMountable.Mount.sibling(build_conn(), :plain_lib) == nil
+    end
+
+    test "Path.path/3 builds a path under the sibling, with the endpoint's script name" do
+      sample = Router.__phoenix_mountable_mount__(:sample_lib)
+      assert PhoenixMountable.Path.path(sample, :other_sample, "/items/1") == "/other/items/1"
+      assert PhoenixMountable.Path.path(sample, :nested_sample, "/") == "/admin/nested"
+
+      conn =
+        build_conn()
+        |> Plug.Conn.put_private(:phoenix_mountable, sample)
+        |> Map.put(:script_name, ["app"])
+
+      assert PhoenixMountable.Path.path(conn, :other_sample, "/") == "/app/other"
+    end
+
+    test "Path.path/3 raises for a mount the host does not have" do
+      sample = Router.__phoenix_mountable_mount__(:sample_lib)
+
+      assert_raise ArgumentError, ~r/no mount named :nope in SampleLib.TestHost.Router/, fn ->
+        PhoenixMountable.Path.path(sample, :nope, "/")
+      end
+    end
+  end
 end
