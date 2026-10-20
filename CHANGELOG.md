@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.2.3
 
 * `use PhoenixMountable.Install` compiles in an app without Igniter, as
   a plain Mix task. It chose the task with an `if` in the code it
