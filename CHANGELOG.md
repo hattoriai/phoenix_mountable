@@ -17,7 +17,8 @@
 * TypeScript types for the browser helper.
 * A pending upgrade under `pending_migrations: :raise` is checked again
   on each use, so running the migration takes effect without a restart.
-* The migration generator compiles without warnings on Elixir 1.20.
+* The migration generator compiles without warnings on Elixir 1.19 and
+  1.20.
 
 ## v0.1.0
 

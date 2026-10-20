@@ -26,7 +26,7 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports: ["5432:5432"]
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        options: --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
       mysql:
         image: mysql:8.4
         env:
@@ -71,8 +71,11 @@ jobs:
         with:
           elixir-version: "1.18"
           otp-version: "27"
-      - run: mix deps.get
+      # As a Hex user builds it: prod, so no dev or test dependencies.
+      - run: mix deps.get --only prod
       - run: mix compile --no-optional-deps --warnings-as-errors
+        env:
+          MIX_ENV: prod
 
   docs:
     name: Docs and Dialyzer
