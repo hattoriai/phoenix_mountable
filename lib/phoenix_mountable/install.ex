@@ -111,30 +111,42 @@ defmodule PhoenixMountable.Install do
   end
 
   defmacro __using__(opts) do
-    quote bind_quoted: [opts: opts] do
-      @phoenix_mountable_install PhoenixMountable.Install.__config__(opts)
+    quote do
+      @phoenix_mountable_install PhoenixMountable.Install.__config__(unquote(opts))
       @shortdoc PhoenixMountable.Install.__shortdoc__(@phoenix_mountable_install)
       @behaviour PhoenixMountable.Install
 
-      if Code.ensure_loaded?(Igniter) do
-        use Igniter.Mix.Task
+      unquote(__task__(Code.ensure_loaded?(Igniter)))
+    end
+  end
 
-        @impl Igniter.Mix.Task
-        def info(_argv, _composing_task) do
-          %Igniter.Mix.Task.Info{group: @phoenix_mountable_install.otp_app}
-        end
+  # The task, with Igniter or without, chosen as the macro expands: an
+  # `if` in the quoted code would still expand both branches, and
+  # `use Igniter.Mix.Task` fails to expand in an app without Igniter.
+  @doc false
+  def __task__(true = _igniter?) do
+    quote do
+      use Igniter.Mix.Task
 
-        @impl Igniter.Mix.Task
-        def igniter(igniter) do
-          PhoenixMountable.Install.run(igniter, __MODULE__, @phoenix_mountable_install)
-        end
-      else
-        use Mix.Task
+      @impl Igniter.Mix.Task
+      def info(_argv, _composing_task) do
+        %Igniter.Mix.Task.Info{group: @phoenix_mountable_install.otp_app}
+      end
 
-        @impl Mix.Task
-        def run(_argv) do
-          PhoenixMountable.Install.without_igniter(@phoenix_mountable_install)
-        end
+      @impl Igniter.Mix.Task
+      def igniter(igniter) do
+        PhoenixMountable.Install.run(igniter, __MODULE__, @phoenix_mountable_install)
+      end
+    end
+  end
+
+  def __task__(false = _igniter?) do
+    quote do
+      use Mix.Task
+
+      @impl Mix.Task
+      def run(_argv) do
+        PhoenixMountable.Install.without_igniter(@phoenix_mountable_install)
       end
     end
   end
