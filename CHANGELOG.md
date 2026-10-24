@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.2.5
 
 * `use PhoenixMountable.Install, html_helpers: [...]` and
   `PhoenixMountable.Igniter.add_html_helpers/3` add lines to the
