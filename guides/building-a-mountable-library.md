@@ -193,6 +193,42 @@ tags in EEx templates. A JSON API is a `forward` to a `Plug.Router` or
 that renders its shell with the `PhoenixMountable.Assets.Static`
 strategy.
 
+## Signed webhooks
+
+A route that checks a signature of its request's body (a provider's
+webhook) needs the body as it was sent. In a Phoenix app the endpoint's
+`Plug.Parsers` reads it before the router, and a body can be read once;
+`PhoenixMountable.RawBody` keeps it, for every library of the host, given
+to the parsers once:
+
+```elixir
+plug Plug.Parsers,
+  parsers: [:urlencoded, :multipart, :json],
+  pass: ["*/*"],
+  body_reader: {PhoenixMountable.RawBody, :read_body, [MyAppWeb.Router]},
+  json_decoder: Phoenix.json_library()
+```
+
+The plug that handles the route says it wants the body, and reads it:
+
+```elixir
+defmodule MyLib.Webhook do
+  use PhoenixMountable.RawBody
+
+  def init(opts), do: opts
+
+  def call(conn, _opts) do
+    {:ok, body, conn} = PhoenixMountable.RawBody.fetch(conn, 1_000_000)
+    # check the signature of body
+  end
+end
+```
+
+The reader asks the router which plug a request will reach, so it keeps
+the body wherever the host puts the route: a path, a scope or a pipeline
+of its own, a mount or a plain `post`. `raw_body: true` in the installer
+(`PhoenixMountable.Install`) adds the reader to the host's endpoint.
+
 ## A core and a web package
 
 A library whose functionality is useful without its pages (Oban and

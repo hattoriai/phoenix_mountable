@@ -39,6 +39,7 @@ The steps run in this order, each when its option is given:
 | `:css` | imports the library's style sheets in `assets/css/app.css`, a theme as a comment |
 | `:tailwind` | adds the library to the host's Tailwind sources |
 | `:supervisor` | starts the mounts' processes at boot |
+| `:raw_body` | gives the endpoint's `Plug.Parsers` the reader that keeps a body as it was sent, for the library's signed webhooks (`PhoenixMountable.RawBody`); a host with a reader of its own is left as it is, with a warning |
 
 Then the library's own steps:
 

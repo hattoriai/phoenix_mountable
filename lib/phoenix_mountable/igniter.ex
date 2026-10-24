@@ -337,6 +337,94 @@ if Code.ensure_loaded?(Igniter) do
     end
 
     @doc """
+    Keeps the body of the requests whose plug wants it as it was sent
+    (`PhoenixMountable.RawBody`): adds `body_reader:
+    {PhoenixMountable.RawBody, :read_body, [Router]}` to the `Plug.Parsers`
+    of the host's endpoint.
+
+    An endpoint whose `Plug.Parsers` has that reader already is left as it
+    is. One with another reader is left as it is too, with a warning that
+    says what to change: the host's reader may be there for a reason of its
+    own.
+
+    Options: `:router` and `:endpoint`, the host's by default.
+    """
+    @spec add_raw_body(Igniter.t(), keyword) :: Igniter.t()
+    def add_raw_body(igniter, opts \\ []) do
+      {igniter, router} =
+        case Keyword.fetch(opts, :router) do
+          {:ok, router} -> {igniter, router}
+          :error -> Igniter.Libs.Phoenix.select_router(igniter)
+        end
+
+      {igniter, endpoint} =
+        case Keyword.fetch(opts, :endpoint) do
+          {:ok, endpoint} -> {igniter, endpoint}
+          :error -> Igniter.Libs.Phoenix.select_endpoint(igniter, router)
+        end
+
+      reader = quote(do: {PhoenixMountable.RawBody, :read_body, [unquote(router)]})
+
+      if is_nil(router) or is_nil(endpoint) do
+        Igniter.add_warning(igniter, raw_body_by_hand(reader))
+      else
+        case Igniter.Project.Module.find_and_update_module(
+               igniter,
+               endpoint,
+               &put_body_reader(&1, reader)
+             ) do
+          {:ok, igniter} -> igniter
+          {:error, igniter} -> Igniter.add_warning(igniter, raw_body_by_hand(reader))
+        end
+      end
+    end
+
+    defp put_body_reader(zipper, reader) do
+      alias Igniter.Code.Function
+
+      case Function.move_to_function_call_in_current_scope(
+             zipper,
+             :plug,
+             2,
+             &Function.argument_equals?(&1, 0, Plug.Parsers)
+           ) do
+        {:ok, zipper} ->
+          Function.update_nth_argument(zipper, 1, &put_or_keep_reader(&1, reader))
+
+        :error ->
+          {:warning, raw_body_by_hand(reader)}
+      end
+    end
+
+    # The reader added to the parsers' options, unless they have one: this
+    # one, left as it is, or the host's, left too, with a warning.
+    defp put_or_keep_reader(options, reader) do
+      case Igniter.Code.Keyword.get_key(options, :body_reader) do
+        {:ok, existing} ->
+          if existing |> Sourceror.Zipper.node() |> Sourceror.to_string() =~
+               "PhoenixMountable.RawBody",
+             do: {:ok, options},
+             else: {:warning, raw_body_by_hand(reader)}
+
+        :error ->
+          Igniter.Code.Keyword.set_keyword_key(options, :body_reader, reader)
+      end
+    end
+
+    defp raw_body_by_hand(reader) do
+      """
+      Give the Plug.Parsers of your endpoint this body reader, so the routes that
+      check a signature of a request's body can read it as it was sent (see
+      PhoenixMountable.RawBody):
+
+          body_reader: #{Macro.to_string(reader)}
+
+      If the endpoint has another reader, keep what it does in a plug of your own:
+      only one can be given.
+      """
+    end
+
+    @doc """
     Makes the host's Tailwind scan the library's templates, for libraries
     styled by the host (`PhoenixMountable.Assets.Host`).
 
