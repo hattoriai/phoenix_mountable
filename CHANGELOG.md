@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.2.4
 
 * `PhoenixMountable.RawBody`: one body reader for `Plug.Parsers`, for the
   routes that check a signature of their request's body (a provider's
