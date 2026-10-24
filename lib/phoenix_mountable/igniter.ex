@@ -425,6 +425,93 @@ if Code.ensure_loaded?(Igniter) do
     end
 
     @doc """
+    Adds lines to the `html_helpers` of the host's web module, which every
+    LiveView, component and template of the host gets: imports of the
+    library's components, or of a module of the host's.
+
+        add_html_helpers(igniter, ["import MyLib.Components"])
+        add_html_helpers(igniter, ["import {app}.Permissions, only: [allowed?: 3]"])
+
+    `{app}` is the host's module prefix (`MyApp`), `{web}` its web module
+    (`MyAppWeb`). A line already there is not added again. When the web
+    module has no `html_helpers` with a `quote` block, it changes nothing
+    and warns with the lines to add.
+
+    ## Options
+
+      * `:web` — the web module. The host's by default.
+    """
+    @spec add_html_helpers(Igniter.t(), [String.t()], keyword) :: Igniter.t()
+    def add_html_helpers(igniter, lines, opts \\ []) do
+      web = Keyword.get_lazy(opts, :web, fn -> Igniter.Libs.Phoenix.web_module(igniter) end)
+      app = Igniter.Project.Module.module_name_prefix(igniter)
+
+      lines =
+        Enum.map(lines, fn line ->
+          line
+          |> String.replace("{web}", inspect(web))
+          |> String.replace("{app}", inspect(app))
+          |> Code.format_string!()
+          |> IO.iodata_to_binary()
+        end)
+
+      case Igniter.Project.Module.find_and_update_module(igniter, web, &put_helpers(&1, lines)) do
+        {:ok, igniter} -> igniter
+        {:error, igniter} -> Igniter.add_warning(igniter, helpers_by_hand(web, lines))
+      end
+    end
+
+    defp put_helpers(zipper, lines) do
+      alias Igniter.Code.{Common, Function}
+
+      with {:ok, zipper} <- Function.move_to_defp(zipper, :html_helpers, 0),
+           {:ok, zipper} <- Common.move_to_do_block(zipper),
+           {:ok, zipper} <- into_quote(zipper) do
+        body = zipper |> Sourceror.Zipper.node() |> Sourceror.to_string()
+        missing = Enum.reject(lines, &String.contains?(body, &1))
+        {:ok, Enum.reduce(missing, zipper, &add_last(&2, &1))}
+      else
+        _ -> {:warning, helpers_by_hand(nil, lines)}
+      end
+    end
+
+    # The body of the function's quote: Igniter's move_to_do_block goes
+    # through a body that is only the quote call; otherwise, into it.
+    defp into_quote(zipper) do
+      case Sourceror.Zipper.node(zipper) do
+        {:quote, _, _} -> Igniter.Code.Common.move_to_do_block(zipper)
+        {:__block__, _, [{:quote, _, _} | _]} -> :error
+        _body -> {:ok, zipper}
+      end
+    end
+
+    # After the last expression of the block.
+    defp add_last(zipper, line) do
+      zipper =
+        case Sourceror.Zipper.node(zipper) do
+          {:__block__, _, [_ | _]} -> zipper |> Sourceror.Zipper.down() |> rightmost()
+          _ -> zipper
+        end
+
+      Igniter.Code.Common.add_code(zipper, line, placement: :after)
+    end
+
+    defp rightmost(zipper) do
+      case Sourceror.Zipper.right(zipper) do
+        nil -> zipper
+        right -> rightmost(right)
+      end
+    end
+
+    defp helpers_by_hand(web, lines) do
+      """
+      Add these lines to the quote block of html_helpers in your web module#{if web, do: " (#{inspect(web)})", else: ""}:
+
+      #{Enum.map_join(lines, "\n", &("    " <> &1))}
+      """
+    end
+
+    @doc """
     Makes the host's Tailwind scan the library's templates, for libraries
     styled by the host (`PhoenixMountable.Assets.Host`).
 

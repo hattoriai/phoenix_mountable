@@ -29,6 +29,12 @@ defmodule PhoenixMountable.Install do
       doc:
         "Give the host's endpoint the reader that keeps a body as it was sent, for the library's routes that check a signature of it (`PhoenixMountable.RawBody`)."
     ],
+    html_helpers: [
+      type: {:list, :string},
+      default: [],
+      doc:
+        "Lines for the `html_helpers` of the host's web module, such as `\"import MyLib.Components\"`; `{app}` and `{web}` are the host's module prefix and web module."
+    ],
     shortdoc: [
       type: :string,
       doc: "The task's short doc. Defaults to `Installs <library> in a Phoenix app`."
@@ -75,6 +81,9 @@ defmodule PhoenixMountable.Install do
     7. `:raw_body` - gives the endpoint's `Plug.Parsers` the reader that
        keeps a body as it was sent, for the library's signed webhooks
        (`PhoenixMountable.Igniter.add_raw_body/2`).
+    8. `:html_helpers` - adds lines to the `html_helpers` of the host's web
+       module, for the library's components or functions in every template
+       (`PhoenixMountable.Igniter.add_html_helpers/3`).
 
   Then the library's own steps, in `c:install/1` (a child of the host's
   application with its options, a module of the host's to write):
@@ -182,6 +191,7 @@ defmodule PhoenixMountable.Install do
       |> step(config.raw_body || nil, fn igniter, true ->
         PhoenixMountable.Igniter.add_raw_body(igniter)
       end)
+      |> step(non_empty(config.html_helpers), &PhoenixMountable.Igniter.add_html_helpers(&1, &2))
       |> then(fn igniter ->
         if Code.ensure_loaded?(module) and function_exported?(module, :install, 1),
           do: module.install(igniter),

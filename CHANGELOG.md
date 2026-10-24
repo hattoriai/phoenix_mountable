@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+* `use PhoenixMountable.Install, html_helpers: [...]` and
+  `PhoenixMountable.Igniter.add_html_helpers/3` add lines to the
+  `html_helpers` of the host's web module, such as the import of a
+  library's components, or of a module of the host's (`{app}`, `{web}`),
+  once. A web module without `html_helpers` is left as it is, with the
+  lines to add.
+
 ## v0.2.4
 
 * `PhoenixMountable.RawBody`: one body reader for `Plug.Parsers`, for the
