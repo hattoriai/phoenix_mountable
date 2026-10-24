@@ -103,7 +103,8 @@ defmodule PhoenixMountable.MixProject do
           PhoenixMountable.Mount,
           PhoenixMountable.Path,
           PhoenixMountable.Layout,
-          PhoenixMountable.HTML
+          PhoenixMountable.HTML,
+          PhoenixMountable.RawBody
         ],
         Assets: ~r/PhoenixMountable\.Assets/,
         Processes: [

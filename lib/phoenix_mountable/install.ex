@@ -23,6 +23,12 @@ defmodule PhoenixMountable.Install do
       doc: "Add the library to the host's Tailwind sources."
     ],
     supervisor: [type: :boolean, default: false, doc: "Start the mounts' processes at boot."],
+    raw_body: [
+      type: :boolean,
+      default: false,
+      doc:
+        "Give the host's endpoint the reader that keeps a body as it was sent, for the library's routes that check a signature of it (`PhoenixMountable.RawBody`)."
+    ],
     shortdoc: [
       type: :string,
       doc: "The task's short doc. Defaults to `Installs <library> in a Phoenix app`."
@@ -66,6 +72,9 @@ defmodule PhoenixMountable.Install do
        styled by the host.
     6. `:supervisor` - starts the mounts' processes at boot
        (`PhoenixMountable.Igniter.add_supervisor/2`).
+    7. `:raw_body` - gives the endpoint's `Plug.Parsers` the reader that
+       keeps a body as it was sent, for the library's signed webhooks
+       (`PhoenixMountable.Igniter.add_raw_body/2`).
 
   Then the library's own steps, in `c:install/1` (a child of the host's
   application with its options, a module of the host's to write):
@@ -169,6 +178,9 @@ defmodule PhoenixMountable.Install do
       end)
       |> step(config.supervisor || nil, fn igniter, true ->
         PhoenixMountable.Igniter.add_supervisor(igniter)
+      end)
+      |> step(config.raw_body || nil, fn igniter, true ->
+        PhoenixMountable.Igniter.add_raw_body(igniter)
       end)
       |> then(fn igniter ->
         if Code.ensure_loaded?(module) and function_exported?(module, :install, 1),

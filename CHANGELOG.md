@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+* `PhoenixMountable.RawBody`: one body reader for `Plug.Parsers`, for the
+  routes that check a signature of their request's body (a provider's
+  webhooks). It asks the host's router which plug a request will reach
+  (`Phoenix.Router.route_info/4`, through forwards) and keeps the body as
+  it was sent for the plugs that `use PhoenixMountable.RawBody`, so the
+  host can move and rename those routes freely; `fetch/2` reads it. Until
+  now each library shipped a reader of its own, matched by path, and an
+  endpoint takes only one.
+* `use PhoenixMountable.Install, raw_body: true` and
+  `PhoenixMountable.Igniter.add_raw_body/2` add that reader to the host's
+  endpoint, and leave a reader of the host's own as it is, with a warning.
+
 ## v0.2.3
 
 * `use PhoenixMountable.Install` compiles in an app without Igniter, as

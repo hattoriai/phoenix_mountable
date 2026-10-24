@@ -170,6 +170,57 @@ defmodule PhoenixMountable.IgniterTest do
     end
   end
 
+  @endpoint """
+  defmodule TestWeb.Endpoint do
+    use Phoenix.Endpoint, otp_app: :test
+
+    plug Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      pass: ["*/*"],
+      json_decoder: Phoenix.json_library()
+
+    plug TestWeb.Router
+  end
+  """
+
+  describe "add_raw_body/2" do
+    test "gives the endpoint's parsers the reader, with the host's router" do
+      endpoint =
+        project(%{"lib/test_web/endpoint.ex" => @endpoint})
+        |> PMIgniter.add_raw_body()
+        |> file("lib/test_web/endpoint.ex")
+
+      assert endpoint =~ "body_reader: {PhoenixMountable.RawBody, :read_body, [TestWeb.Router]}"
+    end
+
+    test "changes nothing the second time" do
+      project(%{"lib/test_web/endpoint.ex" => @endpoint})
+      |> PMIgniter.add_raw_body()
+      |> apply_igniter!()
+      |> PMIgniter.add_raw_body()
+      |> assert_unchanged()
+    end
+
+    test "leaves another reader, and says what to change" do
+      other =
+        String.replace(
+          @endpoint,
+          "pass: [\"*/*\"],",
+          "pass: [\"*/*\"],\n    body_reader: {TestWeb.CacheBody, :read_body, []},"
+        )
+
+      igniter = project(%{"lib/test_web/endpoint.ex" => other}) |> PMIgniter.add_raw_body()
+
+      assert file(igniter, "lib/test_web/endpoint.ex") =~ "TestWeb.CacheBody"
+      refute file(igniter, "lib/test_web/endpoint.ex") =~ "PhoenixMountable.RawBody"
+
+      assert Enum.any?(
+               igniter.warnings,
+               &(&1 =~ "PhoenixMountable.RawBody, :read_body, [TestWeb.Router]")
+             )
+    end
+  end
+
   describe "use PhoenixMountable.Install" do
     test "runs the declared steps, then the library's own" do
       igniter = Igniter.compose_task(project(), Mix.Tasks.SampleLib.Install, [])
