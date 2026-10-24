@@ -40,6 +40,7 @@ The steps run in this order, each when its option is given:
 | `:tailwind` | adds the library to the host's Tailwind sources |
 | `:supervisor` | starts the mounts' processes at boot |
 | `:raw_body` | gives the endpoint's `Plug.Parsers` the reader that keeps a body as it was sent, for the library's signed webhooks (`PhoenixMountable.RawBody`); a host with a reader of its own is left as it is, with a warning |
+| `:html_helpers` | adds lines to the `html_helpers` of the host's web module (`"import MyLib.Components"`, or `"import {app}.Permissions, only: [allowed?: 3]"` for a module of the host's), once; a web module without `html_helpers` is left as it is, with the lines to add |
 
 Then the library's own steps:
 

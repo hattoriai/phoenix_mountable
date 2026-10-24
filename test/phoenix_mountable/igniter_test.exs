@@ -3,7 +3,8 @@ defmodule Mix.Tasks.SampleLib.Install do
     otp_app: :sample_lib,
     mounts: [{SampleLib.Router, "/sample", options: "resolver: {web}.SampleResolver"}],
     hook: {"Sample", "sample_lib"},
-    css: ["sample.css"]
+    css: ["sample.css"],
+    html_helpers: ["import SampleLib.Components"]
 
   @impl PhoenixMountable.Install
   def install(igniter) do
@@ -47,6 +48,26 @@ defmodule PhoenixMountable.IgniterTest do
 
     scope "/", TestWeb do
       pipe_through :browser
+    end
+  end
+  """
+
+  @web """
+  defmodule TestWeb do
+    def html do
+      quote do
+        use Phoenix.Component
+        unquote(html_helpers())
+      end
+    end
+
+    defp html_helpers do
+      quote do
+        use Gettext, backend: TestWeb.Gettext
+        import Phoenix.HTML
+        import TestWeb.CoreComponents
+        alias Phoenix.LiveView.JS
+      end
     end
   end
   """
@@ -221,13 +242,56 @@ defmodule PhoenixMountable.IgniterTest do
     end
   end
 
+  describe "add_html_helpers/3" do
+    test "adds the lines at the end of the quote block, with the host's modules" do
+      web =
+        project(%{"lib/test_web.ex" => @web})
+        |> PMIgniter.add_html_helpers([
+          "import SampleLib.Components",
+          "import {app}.Permissions, only: [allowed?: 3]"
+        ])
+        |> file("lib/test_web.ex")
+
+      assert web =~ """
+                   alias Phoenix.LiveView.JS
+                   import SampleLib.Components
+                   import Test.Permissions, only: [allowed?: 3]
+             """
+    end
+
+    test "changes nothing the second time" do
+      project(%{"lib/test_web.ex" => @web})
+      |> PMIgniter.add_html_helpers(["import SampleLib.Components"])
+      |> apply_igniter!()
+      |> PMIgniter.add_html_helpers(["import SampleLib.Components"])
+      |> assert_unchanged()
+    end
+
+    test "a web module without html_helpers: the lines to add" do
+      other = String.replace(@web, "defp html_helpers do", "defp helpers do")
+
+      igniter =
+        project(%{"lib/test_web.ex" => other})
+        |> PMIgniter.add_html_helpers(["import SampleLib.Components"])
+
+      refute file(igniter, "lib/test_web.ex") =~ "SampleLib"
+      assert Enum.any?(igniter.warnings, &(&1 =~ "    import SampleLib.Components"))
+    end
+  end
+
   describe "use PhoenixMountable.Install" do
     test "runs the declared steps, then the library's own" do
-      igniter = Igniter.compose_task(project(), Mix.Tasks.SampleLib.Install, [])
+      igniter =
+        Igniter.compose_task(
+          project(%{"lib/test_web.ex" => @web}),
+          Mix.Tasks.SampleLib.Install,
+          []
+        )
 
       assert router(igniter) =~ ~r/sample_lib[ (]"\/sample", resolver: TestWeb.SampleResolver/
       assert file(igniter, "assets/js/app.js") =~ "hooks: {Sample}"
       assert file(igniter, "assets/css/app.css") =~ "sample_lib/priv/static/sample.css"
+      assert file(igniter, "lib/test_web.ex") =~ "import SampleLib.Components"
       assert_creates(igniter, "lib/test_web/sample_resolver.ex")
     end
 
