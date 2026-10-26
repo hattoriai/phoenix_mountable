@@ -2,6 +2,18 @@
 
 ![PhoenixMountable — Mountable libraries for Phoenix](https://raw.githubusercontent.com/hattoriai/phoenix_mountable/main/media/banner.png)
 
+<p>
+  <a href="https://hex.pm/packages/phoenix_mountable">
+    <img alt="Hex Version" src="https://img.shields.io/hexpm/v/phoenix_mountable.svg">
+  </a>
+  <a href="https://hexdocs.pm/phoenix_mountable">
+    <img src="https://img.shields.io/badge/docs-hexdocs-blue" alt="HexDocs">
+  </a>
+  <a href="https://github.com/hattoriai/phoenix_mountable/actions">
+    <img alt="CI Status" src="https://github.com/hattoriai/phoenix_mountable/actions/workflows/ci.yml/badge.svg">
+  </a>
+</p>
+
 PhoenixMountable is for building libraries that mount into a Phoenix
 app, the way Phoenix LiveDashboard, Oban Web and Lotus Web do. A host app
 adds one line to its router:
