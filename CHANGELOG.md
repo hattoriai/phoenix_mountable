@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+* Migration SQL uses the host repo's selected dynamic pool and transaction,
+  including tracking reads and writes.
+
 ## v0.2.5
 
 * `use PhoenixMountable.Install, html_helpers: [...]` and
