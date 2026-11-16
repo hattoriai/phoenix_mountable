@@ -51,7 +51,7 @@ if Code.ensure_loaded?(Ecto.Adapters.SQL) do
 
     @doc false
     def query!(repo, sql, params \\ []) do
-      Ecto.Adapters.SQL.query!(repo, sql, params, log: false)
+      repo.query!(sql, params, log: false)
     end
 
     @doc false

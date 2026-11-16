@@ -48,6 +48,9 @@ def up(ctx), do: ...
 
 The host owns one pinned line per upgrade:
 
+Plain SQL from library migrations uses the host repo's current dynamic pool
+and transaction, as selected with `put_dynamic_repo/1` or Ecto's migrator.
+
 ```elixir
 defmodule MyApp.Repo.Migrations.AddMyLib do
   use Ecto.Migration
